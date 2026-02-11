@@ -8,16 +8,23 @@ import (
 
 func TestGenerateRandomElementsSizeZero(t *testing.T) {
 	result := generateRandomElements(0)
-	if len(result) != 0 {
-		t.Errorf("GenerateRandomElements: Ошибка, размер слайса 0, полученный %d", len(result))
-	}
+	assert.Empty(t, result, "для размера 0 должен возвращаться пустой слайс")
 }
 
 func TestGenerateRandomElementsSizePositive(t *testing.T) {
 	size := 10
-	if len(generateRandomElements(size)) != size {
-		t.Errorf("GenerateRandomElements: Ошибка, размер слайса %d, полученный %d", size, len(generateRandomElements(size)))
-	}
+	result := generateRandomElements(size)
+	assert.Len(t, result, size, "длина слайса должна совпадать с запрошенным размером")
+}
+
+func TestGenerateRandomElementsNegativeSize(t *testing.T) {
+	result := generateRandomElements(-5)
+	assert.Empty(t, result, "для отрицательного размера должен возвращаться пустой слайс")
+}
+
+func TestGenerateRandomElementsSingleElement(t *testing.T) {
+	result := generateRandomElements(1)
+	assert.Len(t, result, 1, "для размера 1 должен возвращаться слайс из одного элемента")
 }
 
 func TestMaximum(t *testing.T) {
@@ -69,11 +76,58 @@ func TestMaximum(t *testing.T) {
 			got, err := maximum(tt.input)
 
 			if tt.wantErr {
-				assert.Error(t, err, "Ожидалась ошибка: слайс пуст") // сообщение на русском
+				assert.Error(t, err, "Ожидалась ошибка: слайс пуст")
 			} else {
-				assert.NoError(t, err, "Не ожидалось ошибки")                       // сообщение на русском
-				assert.Equal(t, tt.want, got, "Максимальное значение не совпадает") // тоже на русском
+				assert.NoError(t, err, "Не ожидалось ошибки")
+				assert.Equal(t, tt.want, got, "Максимальное значение не совпадает")
 			}
 		})
 	}
+}
+
+func TestMaxChunksNormalCase(t *testing.T) {
+	data := []int{1, 5, 3, 9, 2, 8, 4, 6, 7}
+	result, err := maxChunks(data)
+	assert.NoError(t, err)
+	assert.Equal(t, 9, result, "многопоточный поиск должен находить корректный максимум")
+}
+
+func TestMaxChunksEmptySlice(t *testing.T) {
+	result, err := maxChunks([]int{})
+	assert.Error(t, err, "для пустого слайса должна возвращаться ошибка")
+	_ = result
+}
+
+func TestMaxChunksSingleElement(t *testing.T) {
+	result, err := maxChunks([]int{42})
+	assert.NoError(t, err)
+	assert.Equal(t, 42, result, "для одного элемента должен возвращаться этот элемент")
+}
+
+func TestMaxChunksLessThanChunks(t *testing.T) {
+	data := []int{1, 5, 3}
+	result, err := maxChunks(data)
+	assert.NoError(t, err)
+	assert.Equal(t, 5, result, "должен корректно обрабатывать слайс меньше CHUNKS")
+}
+
+func TestMaxChunksExactlyChunks(t *testing.T) {
+	data := []int{1, 2, 3, 4, 5, 6, 7, 8}
+	result, err := maxChunks(data)
+	assert.NoError(t, err)
+	assert.Equal(t, 8, result, "должен корректно обрабатывать слайс размера CHUNKS")
+}
+
+func TestMaxChunksMoreThanChunks(t *testing.T) {
+	data := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
+	result, err := maxChunks(data)
+	assert.NoError(t, err)
+	assert.Equal(t, 16, result, "должен корректно обрабатывать слайс больше CHUNKS")
+}
+
+func TestMaxChunksAllSameElements(t *testing.T) {
+	data := []int{7, 7, 7, 7, 7, 7, 7, 7, 7}
+	result, err := maxChunks(data)
+	assert.NoError(t, err)
+	assert.Equal(t, 7, result, "должен корректно обрабатывать одинаковые элементы")
 }
